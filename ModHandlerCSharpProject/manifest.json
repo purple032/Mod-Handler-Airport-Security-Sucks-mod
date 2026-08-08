@@ -1,0 +1,9 @@
+﻿{
+  "id": "com.purple.modhandler",
+  "name": "Mod Handler",
+  "version": "1.0.0",
+  "author": "Purple",
+  "description": "Mod Handler mod for enabling / disabling mods.",
+  "type": "dll",
+  "entry": "Main.dll"
+}
