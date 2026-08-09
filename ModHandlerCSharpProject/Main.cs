@@ -1,6 +1,9 @@
-﻿using ASL.Api;
+using ASL.Api;
 using System.IO;
 using System.Diagnostics;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 public sealed class ModHandler : AslMod
 {
@@ -25,30 +28,26 @@ public sealed class ModHandler : AslMod
         ctx.Menu.AddLabel("! A restart is required after enabling / disabling a mod !");
 
         string[] mods = Directory.GetDirectories(modsFolder.FullName);
-        if (mods.Length > 0)
+        foreach (string modPath in mods)
         {
-            foreach (string modPath in mods)
+            if (Path.GetFileName(modPath) != Path.GetFileName(modFolder))
             {
-                if (Path.GetFileName(modPath) != Path.GetFileName(modFolder))
-                {
-                    ctx.Menu.AddToggle(Path.GetFileName(modPath), true, state => HandleMod(modPath, state, modsDisabledFolder, modsFolder, ctx));
-                }
+                ctx.Menu.AddToggle(Path.GetFileName(modPath), true, state => HandleMod(modPath, state, modsDisabledFolder, modsFolder, ctx));
             }
         }
         
 
         string[] disabledMods = Directory.GetDirectories(modsDisabledFolder);
-        if (disabledMods.Length > 0)
+        foreach (string modPath in disabledMods)
         {
-            foreach (string modPath in disabledMods)
-            {
-                ctx.Menu.AddToggle(Path.GetFileName(modPath), false, state => HandleMod(modPath, state, modsDisabledFolder, modsFolder, ctx));
-            }
+            ctx.Menu.AddToggle(Path.GetFileName(modPath), false, state => HandleMod(modPath, state, modsDisabledFolder, modsFolder, ctx));
         }
+        
         
         ctx.Menu.AddButton("Open mods folder", () => Process.Start("explorer.exe", modsFolder.FullName));
         ctx.Menu.AddButton("Open disabled mods folder", () => Process.Start("explorer.exe", modsDisabledFolder));
-        ctx.Menu.AddButton("Restart game", () => RestartGame(ctx));
+        ctx.Menu.AddButton("Restart game", RestartGame);
+        ctx.Menu.AddButton("Check for updates", () => UpdateChecker(ctx));
     }
 
     private void HandleMod(string pathToMod, bool enabled, string modsDisabledFolder, DirectoryInfo modsFolder, IModContext ctx)
@@ -83,9 +82,34 @@ public sealed class ModHandler : AslMod
         }
     }
 
-    private void RestartGame(IModContext ctx)
+    private void RestartGame()
     {
         Process.Start(new ProcessStartInfo{FileName = "steam://rungameid/4285690", UseShellExecute = true});
         Process.GetCurrentProcess().Kill();
+    }
+
+    private async Task UpdateChecker(IModContext ctx)
+    {
+        ctx.Log.Info("Checking for updates...");
+
+        var client = new HttpClient();
+        var response = await client.GetStringAsync(
+            "https://raw.githubusercontent.com/purple032/Mod-Handler-Airport-Security-Sucks-mod/refs/heads/main/ModHandlerCSharpProject/manifest.json");
+        var version = JsonDocument.Parse(response).RootElement.GetProperty("version").GetString();
+        var currentManifest = File.ReadAllText(Path.Combine(ctx.ModDirectory, "manifest.json"));
+        var currentVersion = JsonDocument.Parse(currentManifest).RootElement.GetProperty("version").GetString();
+
+        if (version == currentVersion)
+        {
+            ctx.Log.Info("ModHandler is up to date.");
+            
+            Process.Start(new ProcessStartInfo{FileName = "https://github.com/purple032/Mod-Handler-Airport-Security-Sucks-mod/blob/main/you_are_up_to_date.md", UseShellExecute = true});
+        }
+        else
+        {
+            ctx.Log.Info("ModHandler is out of date.");
+
+            Process.Start(new ProcessStartInfo{FileName = "https://github.com/purple032/Mod-Handler-Airport-Security-Sucks-mod/blob/main/you_are_out_of_date.md", UseShellExecute = true});
+        }
     }
 }
