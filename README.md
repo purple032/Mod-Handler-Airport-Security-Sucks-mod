@@ -11,6 +11,6 @@ A mod handler for Airport Security Sucks! which allows you to enable or disable 
 * Once you are in the main menu, click on mods and then on mod handler
 * All of the instructions to using the mod are there
 # Features of the mod
-This mod is in a very early version, (version 1.0.1 to be exact) so it doesn't have too many features.\
+This mod is in a very early version, (version 1.0.2 to be exact) so it doesn't have too many features.\
 You can enable or disable any mod. To do that, simply click on the mod you want to enable / disable and then restart the game.
 ### If you somehow accidentally disable the Mod Handler mod, go to C:\Program Files (x86)\Steam\steamapps\common\Airport Security Sucks!\modsDisabled and put the ModHandler folder into the mods folder
