@@ -1,3 +1,4 @@
+using System;
 using ASL.Api;
 using System.IO;
 using System.Diagnostics;
@@ -31,7 +32,9 @@ public sealed class ModHandler : AslMod
         string[] mods = Directory.GetDirectories(modsFolder.FullName);
         foreach (string modPath in mods)
         {
-            if (Path.GetFileName(modPath) != Path.GetFileName(modFolder) && Directory.Exists(Path.Combine(modPath, "manifest.json")))
+            ctx.Log.Info($"Mod: {Path.GetFileName(modPath)}; Is mod handler: {Path.GetFileName(modPath) == Path.GetFileName(modFolder)}; Has manifest: {File.Exists(Path.Combine(modPath, "manifest.json"))}; Should appear: {Path.GetFileName(modPath) != Path.GetFileName(modFolder) && File.Exists(Path.Combine(modPath, "manifest.json"))}.");
+            
+            if (Path.GetFileName(modPath) != Path.GetFileName(modFolder) && File.Exists(Path.Combine(modPath, "manifest.json")))
             {
                 ctx.Menu.AddToggle(Path.GetFileName(modPath), true, state => HandleMod(modPath, state, modsDisabledFolder, modsFolder, ctx));
             }
@@ -41,14 +44,29 @@ public sealed class ModHandler : AslMod
         string[] disabledMods = Directory.GetDirectories(modsDisabledFolder);
         foreach (string modPath in disabledMods)
         {
-            ctx.Menu.AddToggle(Path.GetFileName(modPath), false, state => HandleMod(modPath, state, modsDisabledFolder, modsFolder, ctx));
+            ctx.Log.Info($"Mod: {Path.GetFileName(modPath)}; Is mod handler: {Path.GetFileName(modPath) == Path.GetFileName(modFolder)}; Has manifest: {File.Exists(Path.Combine(modPath, "manifest.json"))}; Should appear: {Path.GetFileName(modPath) != Path.GetFileName(modFolder) && File.Exists(Path.Combine(modPath, "manifest.json"))}.");
+            
+            if (File.Exists(Path.Combine(modPath, "manifest.json")))
+            {
+                ctx.Menu.AddToggle(Path.GetFileName(modPath), false, state => HandleMod(modPath, state, modsDisabledFolder, modsFolder, ctx));
+            }
         }
         
         
         ctx.Menu.AddButton("Open mods folder", () => Process.Start("explorer.exe", modsFolder.FullName));
         ctx.Menu.AddButton("Open disabled mods folder", () => Process.Start("explorer.exe", modsDisabledFolder));
         ctx.Menu.AddButton("Restart game", RestartGame);
-        ctx.Menu.AddButton("Check for updates", () => UpdateChecker(ctx));
+        ctx.Menu.AddButton("Check for updates", async () =>
+        {
+            try
+            {
+                await UpdateChecker(ctx);
+            }
+            catch (Exception ex)
+            {
+                ctx.Log.Warning($"Update check failed. Error: {ex}");
+            }
+        });
     }
 
     private void HandleMod(string pathToMod, bool enabled, string modsDisabledFolder, DirectoryInfo modsFolder, IModContext ctx)
@@ -95,7 +113,7 @@ public sealed class ModHandler : AslMod
 
         var client = new HttpClient();
         var response = await client.GetStringAsync(
-            "https://raw.githubusercontent.com/purple032/Mod-Handler-Airport-Security-Sucks-mod/refs/heads/main/ModHandlerCSharpProject/manifest.json");
+            "https://raw.githubusercontent.com/purple032/Mod-Handler-Airport-Security-Sucks-mod/refs/heads/main/src/manifest.json");
         var version = JsonDocument.Parse(response).RootElement.GetProperty("version").GetString();
         var currentManifest = File.ReadAllText(Path.Combine(ctx.ModDirectory, "manifest.json"));
         var currentVersion = JsonDocument.Parse(currentManifest).RootElement.GetProperty("version").GetString();
