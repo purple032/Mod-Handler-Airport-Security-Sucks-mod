@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ASL;
 
 public sealed class ModHandler : AslMod
 {
@@ -30,7 +31,7 @@ public sealed class ModHandler : AslMod
         string[] mods = Directory.GetDirectories(modsFolder.FullName);
         foreach (string modPath in mods)
         {
-            if (Path.GetFileName(modPath) != Path.GetFileName(modFolder))
+            if (Path.GetFileName(modPath) != Path.GetFileName(modFolder) && Directory.Exists(Path.Combine(modPath, "manifest.json")))
             {
                 ctx.Menu.AddToggle(Path.GetFileName(modPath), true, state => HandleMod(modPath, state, modsDisabledFolder, modsFolder, ctx));
             }
